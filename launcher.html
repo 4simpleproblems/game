@@ -1,98 +1,392 @@
 <!DOCTYPE html>
-<html>
-                     <!--Terrible Emulator by MK Games-->
-                        <!--Credit To GBA Bandicoot-->
-     <!--Visit GBA Bandicoot at https://github.com/xAsrielDreemurr/GBA-Bandicoot-->
-         
-         
-          <!--Oh Yeah. Why are you looking at the code ._.-->
- <head>
-         
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-115293259-1"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4SP | Game Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Required Scripts - Import the original scripts from paste.txt -->
+    <script src="IodineGBA/includes/TypedArrayShim.js"></script>
+    <script src="IodineGBA/core/Cartridge.js"></script>
+    <script src="IodineGBA/core/DMA.js"></script>
+    <script src="IodineGBA/core/Emulator.js"></script>
+    <script src="IodineGBA/core/Graphics.js"></script>
+    <script src="IodineGBA/core/RunLoop.js"></script>
+    <script src="IodineGBA/core/Memory.js"></script>
+    <script src="IodineGBA/core/IRQ.js"></script>
+    <script src="IodineGBA/core/JoyPad.js"></script>
+    <script src="IodineGBA/core/Serial.js"></script>
+    <script src="IodineGBA/core/Sound.js"></script>
+    <script src="IodineGBA/core/Timer.js"></script>
+    <script src="IodineGBA/core/Wait.js"></script>
+    <script src="IodineGBA/core/CPU.js"></script>
+    <script src="IodineGBA/core/Saves.js"></script>
+    <script src="IodineGBA/core/sound/FIFO.js"></script>
+    <script src="IodineGBA/core/sound/Channel1.js"></script>
+    <script src="IodineGBA/core/sound/Channel2.js"></script>
+    <script src="IodineGBA/core/sound/Channel3.js"></script>
+    <script src="IodineGBA/core/sound/Channel4.js"></script>
+    <script src="IodineGBA/core/CPU/ARM.js"></script>
+    <script src="IodineGBA/core/CPU/THUMB.js"></script>
+    <script src="IodineGBA/core/CPU/CPSR.js"></script>
+    <script src="IodineGBA/core/graphics/Renderer.js"></script>
+    <script src="IodineGBA/core/graphics/RendererProxy.js"></script>
+    <script src="IodineGBA/core/graphics/BGTEXT.js"></script>
+    <script src="IodineGBA/core/graphics/BG2FrameBuffer.js"></script>
+    <script src="IodineGBA/core/graphics/BGMatrix.js"></script>
+    <script src="IodineGBA/core/graphics/AffineBG.js"></script>
+    <script src="IodineGBA/core/graphics/ColorEffects.js"></script>
+    <script src="IodineGBA/core/graphics/Mosaic.js"></script>
+    <script src="IodineGBA/core/graphics/OBJ.js"></script>
+    <script src="IodineGBA/core/graphics/OBJWindow.js"></script>
+    <script src="IodineGBA/core/graphics/Window.js"></script>
+    <script src="IodineGBA/core/graphics/Compositor.js"></script>
+    <script src="IodineGBA/core/memory/DMA0.js"></script>
+    <script src="IodineGBA/core/memory/DMA1.js"></script>
+    <script src="IodineGBA/core/memory/DMA2.js"></script>
+    <script src="IodineGBA/core/memory/DMA3.js"></script>
+    <script src="IodineGBA/core/cartridge/SaveDeterminer.js"></script>
+    <script src="IodineGBA/core/cartridge/SRAM.js"></script>
+    <script src="IodineGBA/core/cartridge/FLASH.js"></script>
+    <script src="IodineGBA/core/cartridge/EEPROM.js"></script>
 
-  gtag('config', 'UA-115293259-1');
-</script>
+    <script src="user_scripts/XAudioJS/swfobject.js"></script>
+    <script src="user_scripts/XAudioJS/resampler.js"></script>
+    <script src="user_scripts/XAudioJS/XAudioServer.js"></script>
+    <script src="user_scripts/IodineGBAROMLoadGlueCode.js"></script>
+    <script src="user_scripts/IodineGBAJoyPadGlueCode.js"></script>
+    <script src="user_scripts/IodineGBASavesGlueCode.js"></script>
+    <script src="user_scripts/IodineGBAGraphicsGlueCode.js"></script>
+    <script src="user_scripts/IodineGBAAudioGlueCode.js"></script>
+    <script src="user_scripts/IodineGBACoreGlueCode.js"></script>
+    <script src="user_scripts/base64.js"></script>
+    
+    <style>
+        * { 
+            font-family: 'Roboto Mono', monospace !important; 
+            text-decoration: none !important; 
+            box-sizing: border-box; 
+        }
+        :root { 
+            --black: #000; 
+            --white: #fff; 
+            --light-gray: #f0f0f0; 
+            --dark-gray: #333; 
+            --pill-radius: 50px; 
+            --card-radius: 24px; 
+        }
+        body { 
+            background-color: var(--light-gray); 
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh; 
+            color: var(--black); 
+        }
+        .navbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 1.5rem 3rem; 
+            background-color: var(--black); 
+            color: var(--white); 
+            border-bottom: 1px solid var(--dark-gray); 
+        }
+        .logo { 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            letter-spacing: -1.5px; 
+        }
+        .nav-buttons { 
+            display: flex; 
+            gap: 1.5rem; 
+            align-items: center; 
+        }
+        .btn { 
+            display: inline-block; 
+            padding: 1rem 2rem; 
+            border-radius: var(--pill-radius); 
+            font-size: 1rem; 
+            cursor: pointer; 
+            text-align: center; 
+            font-weight: 500; 
+            transition: all 0.3s ease; 
+        }
+        .btn.primary { 
+            background-color: var(--black); 
+            color: var(--white); 
+            border: 2px solid var(--black); 
+        }
+        .btn.secondary { 
+            background-color: transparent; 
+            color: var(--white); 
+            border: 2px solid var(--white); 
+        }
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--white);
+            border-radius: var(--card-radius);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .game-title {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        .game-container {
+            position: relative;
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--black);
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        #emulator_target {
+            display: block;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .fullscreen-btn-container {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+        .fullscreen-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: var(--white);
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .fullscreen-btn:hover {
+            transform: scale(1.1);
+            background-color: var(--black);
+        }
+        .fullscreen-icon {
+            width: 18px;
+            height: 18px;
+        }
+        #tempMessage {
+            text-align: center;
+            display: block;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .game-instructions {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: var(--light-gray);
+            border-radius: var(--card-radius);
+        }
+        .game-instructions h3 {
+            margin-top: 0;
+        }
+        /* Fullscreen styles */
+        .fullscreen-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--black);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .fullscreen-container.active {
+            display: flex;
+        }
+        .fullscreen-canvas-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .fullscreen-canvas-wrapper #emulator_target {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+        .fullscreen-btn-container-fs {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+        .exit-fullscreen-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: var(--white);
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .exit-fullscreen-btn:hover {
+            transform: scale(1.1);
+            background-color: var(--black);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">4SP</div>
+        <div class="nav-buttons">
+            <a href="./index.html" class="btn secondary">Games</a>
+            <a href="https://4simpleproblems.github.io/dashboard.html" class="btn secondary">Dashboard</a>
+        </div>
+    </nav>
 
-          <link rel="shortcut icon" type="image/x-icon" href="unnamed_ODh_icon.ico">
-         <title>MKGBA</title>
-        <meta charset="UTF-8">
-            <!--Required Scripts-->
-            <script src="IodineGBA/includes/TypedArrayShim.js"></script>
-            <script src="IodineGBA/core/Cartridge.js"></script>
-            <script src="IodineGBA/core/DMA.js"></script>
-            <script src="IodineGBA/core/Emulator.js"></script>
-            <script src="IodineGBA/core/Graphics.js"></script>
-            <script src="IodineGBA/core/RunLoop.js"></script>
-            <script src="IodineGBA/core/Memory.js"></script>
-            <script src="IodineGBA/core/IRQ.js"></script>
-            <script src="IodineGBA/core/JoyPad.js"></script>
-            <script src="IodineGBA/core/Serial.js"></script>
-            <script src="IodineGBA/core/Sound.js"></script>
-            <script src="IodineGBA/core/Timer.js"></script>
-            <script src="IodineGBA/core/Wait.js"></script>
-            <script src="IodineGBA/core/CPU.js"></script>
-            <script src="IodineGBA/core/Saves.js"></script>
-            <script src="IodineGBA/core/sound/FIFO.js"></script>
-            <script src="IodineGBA/core/sound/Channel1.js"></script>
-            <script src="IodineGBA/core/sound/Channel2.js"></script>
-            <script src="IodineGBA/core/sound/Channel3.js"></script>
-            <script src="IodineGBA/core/sound/Channel4.js"></script>
-            <script src="IodineGBA/core/CPU/ARM.js"></script>
-            <script src="IodineGBA/core/CPU/THUMB.js"></script>
-            <script src="IodineGBA/core/CPU/CPSR.js"></script>
-            <script src="IodineGBA/core/graphics/Renderer.js"></script>
-            <script src="IodineGBA/core/graphics/RendererProxy.js"></script>
-            <script src="IodineGBA/core/graphics/BGTEXT.js"></script>
-            <script src="IodineGBA/core/graphics/BG2FrameBuffer.js"></script>
-            <script src="IodineGBA/core/graphics/BGMatrix.js"></script>
-            <script src="IodineGBA/core/graphics/AffineBG.js"></script>
-            <script src="IodineGBA/core/graphics/ColorEffects.js"></script>
-            <script src="IodineGBA/core/graphics/Mosaic.js"></script>
-            <script src="IodineGBA/core/graphics/OBJ.js"></script>
-            <script src="IodineGBA/core/graphics/OBJWindow.js"></script>
-            <script src="IodineGBA/core/graphics/Window.js"></script>
-            <script src="IodineGBA/core/graphics/Compositor.js"></script>
-            <script src="IodineGBA/core/memory/DMA0.js"></script>
-            <script src="IodineGBA/core/memory/DMA1.js"></script>
-            <script src="IodineGBA/core/memory/DMA2.js"></script>
-            <script src="IodineGBA/core/memory/DMA3.js"></script>
-            <script src="IodineGBA/core/cartridge/SaveDeterminer.js"></script>
-            <script src="IodineGBA/core/cartridge/SRAM.js"></script>
-            <script src="IodineGBA/core/cartridge/FLASH.js"></script>
-            <script src="IodineGBA/core/cartridge/EEPROM.js"></script>
+    <main class="container">
+        <h1 class="game-title" id="game-title">Loading Game...</h1>
+        <div class="game-container">
+            <div class="canvas-wrapper">
+                <canvas id="emulator_target" width="240" height="160"></canvas>
+                <div class="fullscreen-btn-container">
+                    <button class="fullscreen-btn" id="fullscreen-btn" title="Enter Fullscreen">
+                        <svg class="fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <span id="tempMessage">Game is loading, please wait...</span>
+        </div>
+    </main>
 
-            <script src="user_scripts/XAudioJS/swfobject.js"></script>
-            <script src="user_scripts/XAudioJS/resampler.js"></script>
-            <script src="user_scripts/XAudioJS/XAudioServer.js"></script>
-            <script src="user_scripts/IodineGBAROMLoadGlueCode.js"></script>
-            <script src="user_scripts/IodineGBAJoyPadGlueCode.js"></script>
-            <script src="user_scripts/IodineGBASavesGlueCode.js"></script>
-            <script src="user_scripts/IodineGBAGraphicsGlueCode.js"></script>
-            <script src="user_scripts/IodineGBAAudioGlueCode.js"></script>
-            <script src="user_scripts/IodineGBACoreGlueCode.js"></script>
-            <script src="user_scripts/base64.js"></script>
-            <link rel="stylesheet" href="user_css/main.css">
-    </head>
-    <body>
-        <canvas id="emulator_target" width="240px" height="160px"></canvas>
-        <span id="tempMessage"></span>
-          
-<script>// set interval
-var tid = setInterval(mycode, 30000);
-function mycode() {
-  gtag('js', new Date());
+    <!-- Fullscreen container -->
+    <div class="fullscreen-container" id="fullscreen-container">
+        <div class="fullscreen-canvas-wrapper">
+            <canvas id="fullscreen_emulator_target" width="240" height="160"></canvas>
+        </div>
+        <div class="fullscreen-btn-container-fs">
+            <button class="exit-fullscreen-btn" id="exit-fullscreen-btn" title="Exit Fullscreen">
+                <svg class="fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
 
-  gtag('config', 'UA-115293259-1');
-}
-function abortTimer() { // to be called when you want to stop the timer
-  clearInterval(tid);
-}
-</script>
+    <script>
+        // Get the game hash from the URL
+        function getGameFromHash() {
+            const hash = window.location.hash.substring(1);
+            return hash || 'pokemonemerald'; // Default game if none specified
+        }
 
- 
-    </body>
+        // Update page title with game name
+        function updateGameTitle(gameId) {
+            const gameTitle = document.getElementById('game-title');
+            // Format the game ID to be more readable
+            const formattedName = gameId
+                .replace(/_/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            
+            document.title = `4SP | ${formattedName}`;
+            gameTitle.textContent = formattedName;
+        }
+
+        // Fullscreen functionality
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+        const fullscreenContainer = document.getElementById('fullscreen-container');
+        const mainCanvas = document.getElementById('emulator_target');
+        const fullscreenCanvas = document.getElementById('fullscreen_emulator_target');
+
+        // Clone canvas to fullscreen
+        function enterFullscreen() {
+            fullscreenContainer.classList.add('active');
+            // Copy the canvas content
+            const context = fullscreenCanvas.getContext('2d');
+            fullscreenCanvas.width = mainCanvas.width;
+            fullscreenCanvas.height = mainCanvas.height;
+            context.drawImage(mainCanvas, 0, 0);
+            
+            // Redirect emulator output to fullscreen canvas
+            try {
+                if (typeof IodineGUI !== 'undefined' && IodineGUI.Iodine) {
+                    IodineGUI.Iodine.setCanvas(fullscreenCanvas);
+                }
+            } catch (e) {
+                console.error("Could not redirect emulator:", e);
+            }
+        }
+
+        function exitFullscreen() {
+            fullscreenContainer.classList.remove('active');
+            // Redirect emulator output back to main canvas
+            try {
+                if (typeof IodineGUI !== 'undefined' && IodineGUI.Iodine) {
+                    IodineGUI.Iodine.setCanvas(mainCanvas);
+                }
+            } catch (e) {
+                console.error("Could not redirect emulator:", e);
+            }
+        }
+
+        fullscreenBtn.addEventListener('click', enterFullscreen);
+        exitFullscreenBtn.addEventListener('click', exitFullscreen);
+
+        // No additional control buttons needed
+
+        // Initialize the game when window loads
+        window.addEventListener('load', function() {
+            const gameId = getGameFromHash();
+            updateGameTitle(gameId);
+            
+            // Original analytics code
+            var tid = setInterval(function() {
+                if (typeof gtag === 'function') {
+                    gtag('js', new Date());
+                    gtag('config', 'UA-115293259-1');
+                }
+            }, 30000);
+            
+            // Handle game loading with the existing system
+            // This is a placeholder assuming the original code handles loading via URL hash
+            document.getElementById('tempMessage').textContent = "Starting game...";
+        });
+
+        // Handle hash changes to load different games
+        window.addEventListener('hashchange', function() {
+            location.reload();
+        });
+    </script>
+</body>
 </html>
