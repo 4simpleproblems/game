@@ -157,11 +157,15 @@
             border-radius: var(--card-radius);
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            aspect-ratio: 3/2; /* Maintain GBA aspect ratio */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #emulator_target {
-            display: block;
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: contain;
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
@@ -232,10 +236,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
-        .fullscreen-canvas-wrapper #emulator_target {
-            max-width: 100%;
-            max-height: 80vh;
+        #fullscreen_emulator_target {
+            max-width: 90%;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
         .fullscreen-btn-container-fs {
             position: absolute;
@@ -322,6 +333,12 @@
             gameTitle.textContent = formattedName;
         }
 
+        // Canvas management for fullscreen
+        let mainCanvasContext = null;
+        let fullscreenCanvasContext = null;
+        let isFullscreen = false;
+        let animationFrameId = null;
+
         // Fullscreen functionality
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
@@ -329,34 +346,46 @@
         const mainCanvas = document.getElementById('emulator_target');
         const fullscreenCanvas = document.getElementById('fullscreen_emulator_target');
 
-        // Clone canvas to fullscreen
-        function enterFullscreen() {
-            fullscreenContainer.classList.add('active');
-            // Copy the canvas content
-            const context = fullscreenCanvas.getContext('2d');
+        // Setup canvas and contexts
+        function setupCanvases() {
+            // Set the fullscreen canvas to match the main canvas dimensions
             fullscreenCanvas.width = mainCanvas.width;
             fullscreenCanvas.height = mainCanvas.height;
-            context.drawImage(mainCanvas, 0, 0);
             
-            // Redirect emulator output to fullscreen canvas
-            try {
-                if (typeof IodineGUI !== 'undefined' && IodineGUI.Iodine) {
-                    IodineGUI.Iodine.setCanvas(fullscreenCanvas);
-                }
-            } catch (e) {
-                console.error("Could not redirect emulator:", e);
-            }
+            // Get contexts
+            mainCanvasContext = mainCanvas.getContext('2d');
+            fullscreenCanvasContext = fullscreenCanvas.getContext('2d');
         }
 
+        // Copy frames from main canvas to fullscreen canvas
+        function copyCanvasFrame() {
+            if (!isFullscreen) return;
+            
+            // Copy current frame from main canvas to fullscreen canvas
+            fullscreenCanvasContext.drawImage(mainCanvas, 0, 0, mainCanvas.width, mainCanvas.height);
+            
+            // Request next frame
+            animationFrameId = requestAnimationFrame(copyCanvasFrame);
+        }
+
+        // Enter fullscreen mode
+        function enterFullscreen() {
+            isFullscreen = true;
+            fullscreenContainer.classList.add('active');
+            
+            // Start copying frames from main canvas to fullscreen canvas
+            copyCanvasFrame();
+        }
+
+        // Exit fullscreen mode
         function exitFullscreen() {
+            isFullscreen = false;
             fullscreenContainer.classList.remove('active');
-            // Redirect emulator output back to main canvas
-            try {
-                if (typeof IodineGUI !== 'undefined' && IodineGUI.Iodine) {
-                    IodineGUI.Iodine.setCanvas(mainCanvas);
-                }
-            } catch (e) {
-                console.error("Could not redirect emulator:", e);
+            
+            // Stop copying frames
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
             }
         }
 
@@ -370,6 +399,9 @@
             const gameId = getGameFromHash();
             updateGameTitle(gameId);
             
+            // Setup canvases for proper rendering
+            setupCanvases();
+            
             // Original analytics code
             var tid = setInterval(function() {
                 if (typeof gtag === 'function') {
@@ -379,8 +411,12 @@
             }, 30000);
             
             // Handle game loading with the existing system
-            // This is a placeholder assuming the original code handles loading via URL hash
             document.getElementById('tempMessage').textContent = "Starting game...";
+            
+            // Hide message after a delay
+            setTimeout(() => {
+                document.getElementById('tempMessage').textContent = "";
+            }, 5000);
         });
 
         // Handle hash changes to load different games
