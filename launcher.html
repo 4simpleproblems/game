@@ -213,62 +213,63 @@
         .game-instructions h3 {
             margin-top: 0;
         }
-        /* Fullscreen styles */
-        .fullscreen-container {
+        
+        /* Fullscreen mode styles */
+        .canvas-wrapper.fullscreen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--black);
+            max-width: 100%;
+            max-height: 100%;
             z-index: 1000;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .fullscreen-container.active {
-            display: flex;
-        }
-        .fullscreen-canvas-wrapper {
-            width: 100%;
-            height: 100%;
+            border-radius: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
+            background-color: var(--black);
         }
-        #fullscreen_emulator_target {
-            max-width: 90%;
-            max-height: 90vh;
-            width: auto;
+        
+        .canvas-wrapper.fullscreen #emulator_target {
+            max-height: 100vh;
+            max-width: 100vw;
             height: auto;
-            object-fit: contain;
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
+            width: auto;
         }
-        .fullscreen-btn-container-fs {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
+        
+        /* Hide navbar and container in fullscreen mode */
+        body.fullscreen-active .navbar,
+        body.fullscreen-active .container {
+            display: none;
         }
+        
+        /* Fullscreen exit button */
         .exit-fullscreen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(255, 255, 255, 0.3);
             color: var(--white);
             border: none;
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        
+        body.fullscreen-active .exit-fullscreen-btn {
+            display: flex;
+        }
+        
         .exit-fullscreen-btn:hover {
             transform: scale(1.1);
-            background-color: var(--black);
+            background-color: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -284,7 +285,7 @@
     <main class="container">
         <h1 class="game-title" id="game-title">Loading Game...</h1>
         <div class="game-container">
-            <div class="canvas-wrapper">
+            <div class="canvas-wrapper" id="canvas-wrapper">
                 <canvas id="emulator_target" width="240" height="160"></canvas>
                 <div class="fullscreen-btn-container">
                     <button class="fullscreen-btn" id="fullscreen-btn" title="Enter Fullscreen">
@@ -298,19 +299,12 @@
         </div>
     </main>
 
-    <!-- Fullscreen container -->
-    <div class="fullscreen-container" id="fullscreen-container">
-        <div class="fullscreen-canvas-wrapper">
-            <canvas id="fullscreen_emulator_target" width="240" height="160"></canvas>
-        </div>
-        <div class="fullscreen-btn-container-fs">
-            <button class="exit-fullscreen-btn" id="exit-fullscreen-btn" title="Exit Fullscreen">
-                <svg class="fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
-                </svg>
-            </button>
-        </div>
-    </div>
+    <!-- Exit fullscreen button -->
+    <button class="exit-fullscreen-btn" id="exit-fullscreen-btn" title="Exit Fullscreen">
+        <svg class="fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+        </svg>
+    </button>
 
     <script>
         // Get the game hash from the URL
@@ -333,74 +327,129 @@
             gameTitle.textContent = formattedName;
         }
 
-        // Canvas management for fullscreen
-        let mainCanvasContext = null;
-        let fullscreenCanvasContext = null;
-        let isFullscreen = false;
-        let animationFrameId = null;
-
         // Fullscreen functionality
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
-        const fullscreenContainer = document.getElementById('fullscreen-container');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
         const mainCanvas = document.getElementById('emulator_target');
-        const fullscreenCanvas = document.getElementById('fullscreen_emulator_target');
+        let isInFullscreen = false;
 
-        // Setup canvas and contexts
-        function setupCanvases() {
-            // Set the fullscreen canvas to match the main canvas dimensions
-            fullscreenCanvas.width = mainCanvas.width;
-            fullscreenCanvas.height = mainCanvas.height;
-            
-            // Get contexts
-            mainCanvasContext = mainCanvas.getContext('2d');
-            fullscreenCanvasContext = fullscreenCanvas.getContext('2d');
-        }
-
-        // Copy frames from main canvas to fullscreen canvas
-        function copyCanvasFrame() {
-            if (!isFullscreen) return;
-            
-            // Copy current frame from main canvas to fullscreen canvas
-            fullscreenCanvasContext.drawImage(mainCanvas, 0, 0, mainCanvas.width, mainCanvas.height);
-            
-            // Request next frame
-            animationFrameId = requestAnimationFrame(copyCanvasFrame);
-        }
-
-        // Enter fullscreen mode
-        function enterFullscreen() {
-            isFullscreen = true;
-            fullscreenContainer.classList.add('active');
-            
-            // Start copying frames from main canvas to fullscreen canvas
-            copyCanvasFrame();
-        }
-
-        // Exit fullscreen mode
-        function exitFullscreen() {
-            isFullscreen = false;
-            fullscreenContainer.classList.remove('active');
-            
-            // Stop copying frames
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
+        // Handle browser fullscreen API
+        function toggleFullScreen() {
+            if (!document.fullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.msFullscreenElement) {
+                // Enter fullscreen
+                if (canvasWrapper.requestFullscreen) {
+                    canvasWrapper.requestFullscreen();
+                } else if (canvasWrapper.mozRequestFullScreen) { // Firefox
+                    canvasWrapper.mozRequestFullScreen();
+                } else if (canvasWrapper.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                    canvasWrapper.webkitRequestFullscreen();
+                } else if (canvasWrapper.msRequestFullscreen) { // IE/Edge
+                    canvasWrapper.msRequestFullscreen();
+                }
+                enterFullscreenMode();
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                exitFullscreenMode();
             }
         }
 
-        fullscreenBtn.addEventListener('click', enterFullscreen);
-        exitFullscreenBtn.addEventListener('click', exitFullscreen);
+        // Enter custom fullscreen mode (add fallback for browsers that don't support fullscreen API)
+        function enterFullscreenMode() {
+            isInFullscreen = true;
+            document.body.classList.add('fullscreen-active');
+            canvasWrapper.classList.add('fullscreen');
+            
+            // Update canvas size to maintain aspect ratio while filling the screen
+            updateCanvasSizeForFullscreen();
+            
+            // Make sure the emulator knows about the size change if needed
+            if (typeof initNewCanvasSize === 'function') {
+                initNewCanvasSize();
+            }
+        }
 
-        // No additional control buttons needed
+        // Exit custom fullscreen mode
+        function exitFullscreenMode() {
+            isInFullscreen = false;
+            document.body.classList.remove('fullscreen-active');
+            canvasWrapper.classList.remove('fullscreen');
+            
+            // Reset canvas size
+            mainCanvas.style.width = '';
+            mainCanvas.style.height = '';
+            
+            // Make sure the emulator knows about the size change if needed
+            if (typeof initNewCanvasSize === 'function') {
+                initNewCanvasSize();
+            }
+        }
+
+        // Update canvas size to maintain aspect ratio in fullscreen
+        function updateCanvasSizeForFullscreen() {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const canvasRatio = mainCanvas.width / mainCanvas.height;
+            const viewportRatio = viewportWidth / viewportHeight;
+            
+            if (viewportRatio > canvasRatio) {
+                // Viewport is wider than canvas
+                const height = viewportHeight * 0.9;
+                const width = height * canvasRatio;
+                mainCanvas.style.width = `${width}px`;
+                mainCanvas.style.height = `${height}px`;
+            } else {
+                // Viewport is taller than canvas
+                const width = viewportWidth * 0.9;
+                const height = width / canvasRatio;
+                mainCanvas.style.width = `${width}px`;
+                mainCanvas.style.height = `${height}px`;
+            }
+        }
+
+        // Handle browser fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                // Exited fullscreen
+                exitFullscreenMode();
+            }
+        }
+
+        // Handle window resize to adjust fullscreen canvas size
+        window.addEventListener('resize', function() {
+            if (isInFullscreen) {
+                updateCanvasSizeForFullscreen();
+            }
+        });
+
+        // Add event listeners
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        exitFullscreenBtn.addEventListener('click', toggleFullScreen);
 
         // Initialize the game when window loads
         window.addEventListener('load', function() {
             const gameId = getGameFromHash();
             updateGameTitle(gameId);
-            
-            // Setup canvases for proper rendering
-            setupCanvases();
             
             // Original analytics code
             var tid = setInterval(function() {
@@ -423,6 +472,17 @@
         window.addEventListener('hashchange', function() {
             location.reload();
         });
+        
+        // ===== POTENTIAL INTEGRATION POINT =====
+        // If the emulator has a function to update canvas size or resize itself, add a hook here
+        // This is a placeholder for where you might need to integrate with the existing emulator code
+        function initNewCanvasSize() {
+            // Check if emulator has initialized and has a resize function
+            if (typeof IodineGUI !== 'undefined' && IodineGUI.Iodine && typeof IodineGUI.Iodine.update !== 'undefined') {
+                // If the emulator has an update method, call it
+                IodineGUI.Iodine.update();
+            }
+        }
     </script>
 </body>
 </html>
